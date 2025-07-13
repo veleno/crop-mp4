@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w                                                                                                                    
+#!/usr/bin/perl -w
 
 use strict;
 use File::Basename;
@@ -6,25 +6,25 @@ use File::Spec;
 use File::Path qw(make_path remove_tree);
 use GD;
 use Data::Dumper;
-#use Image::Magick;                                                                                                                   
+#use Image::Magick;
 use File::Temp qw/tempfile tempdir/;
 use threads;
 
 our $fps = 60;
 our $headTime = "10";
-#our $pickX = 2218;                                                                                                                   
+#our $pickX = 2218;
 our $pickX = 2208;
 our $pickY = 0;
 our $tmpDir = "/mnt/a";
-#our $tmpDir = "~/tmp";                                                                                                               
+#our $tmpDir = "~/tmp";
 
 eval{main(@ARGV)};
 
 print $@ if $@;
 
-## メイン関数                                                                                                                         
-# @param @fileNames ファイル名のリスト                                                                                                
-# @return なし                                                                                                                        
+## メイン関数
+# @param @fileNames ファイル名のリスト
+# @return なし
 sub main{
   my (@fileNames) = @_;
   GD::Image->trueColor(1);
@@ -45,62 +45,60 @@ sub main{
     $cutDir = "$tmpDir/cut/" if $tmpDir;
     make_path($cutDir, {chmod=>0777}) unless -d $cutDir;
     my $outputFile = "${cutDir}$costume-$title.mp4";
-    print "$outputFile\n";
+	print "$outputFile\n";
     my ($cropWidth, $cropHeight, $cropX, $cropY) =
       ($width > $height)
       ? (1920, 1080, 302, 0)
       : (1080, 1920, 0, 320);
-    my $cropCmd = qq{ffmpeg -ss $startTime -to $endTime -i "$fileName" -async 1 -vf crop=w=$cropWidth:h=$cropHeight:x=$cropX:y=$cropY\
- -nostdin -y "$outputFile" < /dev/null &};
+    my $cropCmd = qq{ffmpeg -ss $startTime -to $endTime -i "$fileName" -async 1 -vf crop=w=$cropWidth:h=$cropHeight:x=$cropX:y=$cropY -nostdin -y "$outputFile" < /dev/null &};
     print "$cropCmd\n";
     `$cropCmd`;
-    push @threads, threads->create(sub{
-      if ($outputDir) {
-        my $mvCmd = qq{mv "$outputFile" "$outputDir"};
-        print "outputFile:$outputFile\n";
-        print `ls -l "$outputFile"`;
-	print "outputDir:$outputDir\n";
-        print `ls -l "$outputDir"`;
-        print "$mvCmd\n";
-        `$mvCmd`;
-      } elsif ($tmpDir) {
-        my $orgDir = dirname($fileName);
-        my $resultDir = File::Spec->catfile($orgDir, 'cut');
-        make_path($resultDir) unless -d $resultDir;
-        my $mvCmd = qq{mv "$outputFile" "$resultDir"};
-        print "outputFile:";
-        print `ls -l "$outputFile"`;
-        print "resultDir:";
-        print `ls -l "$resultDir"`;
-        print "$mvCmd\n";
-        `$mvCmd`;
-      }
-    });
+	push @threads, threads->create(sub{
+	  if ($outputDir) {
+		my $mvCmd = qq{mv "$outputFile" "$outputDir"};
+		print "outputFile:$outputFile\n";
+		print `ls -l "$outputFile"`;
+		print "outputDir:$outputDir\n";
+		print `ls -l "$outputDir"`;
+		print "$mvCmd\n";
+		`$mvCmd`;
+	  } elsif ($tmpDir) {
+		my $orgDir = dirname($fileName);
+		my $resultDir = File::Spec->catfile($orgDir, 'cut');
+		make_path($resultDir) unless -d $resultDir;
+		my $mvCmd = qq{mv "$outputFile" "$resultDir"};
+		print "outputFile:";
+		print `ls -l "$outputFile"`;
+		print "resultDir:";
+		print `ls -l "$resultDir"`;
+		print "$mvCmd\n";
+		`$mvCmd`;
+	  }
+	});
   }
   for my $thread(@threads){
-    $thread->join();
+	$thread->join();
   }
 }
 
-##                                                                                                                                    
-# ファイル名からヘッドのオフセットとフレーム数を取得                                                                                  
-# @param $fileName ファイル名                                                                                                         
-# @return ($headOffset, # 冒頭からのオフセット（フレーム単位）                                                                        
-#           $frames,    # フレーム数                                                                                                  
-#           $width,     # 幅                                                                                                          
-#           $height)    # 高さ                                                                                                        
+##
+# ファイル名からヘッドのオフセットとフレーム数を取得
+# @param $fileName ファイル名
+# @return ($headOffset,	# 冒頭からのオフセット（フレーム単位）
+#			$frames,	# フレーム数
+#			$width,		# 幅
+#			$height) 	# 高さ
 sub createHead{
   my ($fileName) = @_;
   my ($dir, $costume, $title, $direction) = $fileName =~ /(.*)\/([^-]+)-([^-]+)(-([^-]+))?\.mp4/;
   print "dir:$dir,costume:$costume,title:$title\n";
   $direction = "" unless $direction;
-  #print "$direction\n" if $direction;                                                                                                
+  #print "$direction\n" if $direction;
   my $headOffset = 0;
   my $headDir = "$dir/head/$costume-$title/";
   $headDir = "$tmpDir/head/$costume-$title/" if $tmpDir;
   make_path($headDir, {chmod=>0777}) unless -d $headDir;
-  my $cutCmd = qq{ffmpeg -i "$fileName" -ss 00:00:00 -to 00:00:$headTime -vcodec png -r $fps "${headDir}image_%05d.png" -y 2>%1 < /de\
-v/null};
+  my $cutCmd = qq{ffmpeg -i "$fileName" -ss 00:00:00 -to 00:00:$headTime -vcodec png -r $fps "${headDir}image_%05d.png" -y 2>%1 < /dev/null};
   print "$cutCmd\n";
   `$cutCmd`;
   my ($width, $height);
@@ -121,31 +119,32 @@ v/null};
   die "$title not found\n" unless $frames;
 
   if($frame==0){
-    #my $bottomOffset = bottomOffset($fileName, $headOffset);                                                                         
-    $frames = calcFrames($fileName, $headOffset);
+  	#my $bottomOffset = bottomOffset($fileName, $headOffset);
+	$frames = calcFrames($fileName, $headOffset);
   }
 
   print "headOffset:$headOffset, frames:$frames\n";
-  return ($headOffset,  # 冒頭からのオフセット（フレーム単位）                                                                        
-          $frames,      # フレーム数                                                                                                  
-          $width,       # 幅                                                                                                          
-          $height);     # 高さ                                                                                                        
+  return ($headOffset,	# 冒頭からのオフセット（フレーム単位）
+		  $frames,		# フレーム数
+		  $width,	    # 幅
+		  $height);		# 高さ
 }
-# MVの内容からフレーム数を計算                                                                                                        
+
+# MVの内容からフレーム数を計算
 sub calcFrames{
   my ($fileName, $headOffset) = @_;
   my ($dir, $costume, $title, $direction) = $fileName =~ /(.*)\/([^-]+)-([^-]+)(-([^-]+))?\.mp4/;
-  # my $bottomDir   = "$dir/bottom/$costume-$title/";                                                                                 
-  # $bottomDir = "$tmpDir/bottom/$costume-$title/" if $tmpDir;                                                                        
-  # make_path($bottomDir, {chmod=>0777}) unless -d $bottomDir;                                                                        
+  # my $bottomDir	= "$dir/bottom/$costume-$title/";
+  # $bottomDir = "$tmpDir/bottom/$costume-$title/" if $tmpDir;
+  # make_path($bottomDir, {chmod=>0777}) unless -d $bottomDir;
 
-  # 下記の間にjudgeに引っかかるフレームが1秒以上存在する想定                                                                          
-  my $minFrame = $fps * 60 * 1.75; ##1分45秒を最短と仮定した場合の最小フレーム数                                                      
-  my $maxFrame = $fps * 60 * 2.5; ##2分30秒を最長と仮定した場合の最大フレーム数                                                       
+  # 下記の間にjudgeに引っかかるフレームが1秒以上存在する想定
+  my $minFrame = $fps * 60 * 1.75; ##1分45秒を最短と仮定した場合の最小フレーム数
+  my $maxFrame = $fps * 60 * 2.5; ##2分30秒を最長と仮定した場合の最大フレーム数
 
 }
 
-# 曲名からフレーム数を取得                                                                                                            
+# 曲名からフレーム数を取得
 sub getFrame{
   my ($title) = @_;
   return 8012 if $title eq "エヴリデイドリーム";
@@ -171,16 +170,15 @@ sub getFrame{
   return 8327 -237 -1 if $title =~ /華蕾夢ミル狂詩曲～魂ノ導～/;
   return 8224 -148 -1 if $title =~ /ショコラ・ティアラ/;
   return 8699 -234 -1 if $title =~ /Angel Breeze/;
-  #die "$title not found\n";                                                                                                          
+  #die "$title not found\n";
   return 0;
 }
 
 sub all{ my($f, @arg) = @_; for my $elm(@arg){ return 0 unless &$f($elm) } 1 }
 
-
-# 判定関数                                                                                                                            
-# @param $img GD::Imageオブジェクト                                                                                                   
-# @return ($width, $height) 画像の幅と高さ                                                                                            
+# 判定関数
+# @param $img GD::Imageオブジェクト
+# @return ($width, $height) 画像の幅と高さ
 sub judge{
   my ($img) = @_;
   my ($width, $height) = $img->getBounds();
@@ -194,18 +192,18 @@ sub judge{
     my $availableBottom = $availableTop + 1913;
     @pixels = map{[$img->rgb($img->getPixel($width/2, $_))]} $availableTop .. $availableBottom;
   }
-  #print(join(",", @$_), " ") for @pixels;                                                                                            
-  #print Dumper(@pixels), "\n";                                                                                                       
-  #return !all(sub{ all(sub{ print"$_[0]," if $_[0]!=29; $_[0]==29 }, @{$_[0]})}, @pixels);                                           
-  # return ($width, $height)                                                                                                          
-  #   if !all(sub{ all(sub{ print"$_[0]," if $_[0]!=29; $_[0]==29 }, @{$_[0]})}, @pixels);                                            
+  #print(join(",", @$_), " ") for @pixels;
+  #print Dumper(@pixels), "\n";
+  #return !all(sub{ all(sub{ print"$_[0]," if $_[0]!=29; $_[0]==29 }, @{$_[0]})}, @pixels);
+  # return ($width, $height)
+  #   if !all(sub{ all(sub{ print"$_[0]," if $_[0]!=29; $_[0]==29 }, @{$_[0]})}, @pixels);
   return ($width, $height)
       if !all(sub{ all(sub{ $_[0]==27 or $_[0]==28 or$_[0]==29 or $_[0]==30 }, @{$_[0]})}, @pixels);
 }
 
 sub formatTime{
   my ($frm) = @_;
-  #return sprintf("%02d:%02d:%02d.%02d",$frm/60/60/60,$frm/60/60,$frm/60,($frm*60)/100);                                              
+  #return sprintf("%02d:%02d:%02d.%02d",$frm/60/60/60,$frm/60/60,$frm/60,($frm*60)/100);
   my $hour = sprintf("%d", $frm/60/60/60);
   $frm -= $hour*60*60*60;
   my $min = sprintf("%d", $frm/60/60);
@@ -215,4 +213,3 @@ sub formatTime{
   my $msec = sprintf("%d", ($frm*100)/60);
   return sprintf("%02d:%02d:%02d.%02d",$hour,$min,$sec,$msec);
 }
-
